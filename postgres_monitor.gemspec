@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Gem to help monitor Postgres Instances}
   spec.description   = %q{This gem is designed to open up SQL queries programatically so that Postgres Databases can be easily monitored}
-  spec.homepage      = "TODO: Put your gem's website or public repo URL here."
+  spec.homepage      = 'https://github.com/scottshea/postgres_monitor'
   spec.license       = 'MIT'
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
-  
+
   spec.add_dependency('pg', '~> 0.17', '>= 0.17.0')
 
   spec.add_development_dependency 'bundler', '~> 1.10'
