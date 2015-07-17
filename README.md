@@ -27,6 +27,8 @@ Or install it yourself as:
 ### Connection to the Database
 To create a connection you will need to supply the host name, user, password (can be nil), and dbname. Port will default to 5432 if it is not provided. sslmode will default to required if it is not supplied.
 
+Additionally there is a variable for configuring the long running query threshold. It defaults to '5 seconds' and follows the Postgres format for time intervals (e.g. '1 minute', '20 seconds')
+
 #### Example
 
 ```ruby
@@ -37,6 +39,7 @@ To create a connection you will need to supply the host name, user, password (ca
   password: 'password',
   sslmode: 'allow',
   dbname: 'postrges'
+  long_query_threshold: '1 second'
 }
 
 @monitor = PostgresMonitor::Monitor.new(@connection_params)
