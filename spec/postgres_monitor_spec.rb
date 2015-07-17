@@ -163,6 +163,17 @@ describe PostgresMonitor do
       expect(results.first.keys).to eq fields
     end
 
+    it 'should return the size of the databases' do
+        results = @monitor.get_database_sizes
+        databases = []
+        results.each do |row|
+          databases << row['db_name']
+          expect(row['db_size'].to_i).to be >= 0
+        end
+
+        expect(databases.include?(@database_name)).to be true
+    end
+
     it 'should return the index usage of the database' do
       fields = %w(
         relname
@@ -171,6 +182,13 @@ describe PostgresMonitor do
       )
       results = @monitor.index_usage
       expect(results.first.keys).to eq fields
+    end
+
+    it 'should show the total size of the indexs in the database' do
+      results = @monitor.total_index_size
+      row = results.first
+      expect(row.keys.include? 'size').to be true
+      expect(row['size'].to_i).to be >= 0
     end
 
     it 'should show the size of the indexes in the database' do

@@ -8,6 +8,8 @@ module PostgresMonitor
         @sslmode  = connection_params[:sslmode] ? connection_params[:sslmode] : 'require'
         @dbname   = connection_params[:dbname]
 
+        @long_query_threshold = connection_params[:long_query_threshold] ? connection_params[:long_query_threshold] : '5 seconds'
+
         @connection = self.connect
       end
 
@@ -50,8 +52,18 @@ module PostgresMonitor
         execute_sql 'SELECT datname FROM pg_database WHERE datistemplate = false;'
       end
 
+      # list connection states and count
+      def connection_counts
+        execute_sql "SELECT #{state_column}, COUNT(*) FROM pg_stat_activity GROUP BY #{state_column};"
+      end
+
+      ### DEPRECATION WARNING
+      # This seems to have an issue with returning multiple duplicate results;
+      # Deprecating in favor of connection_counts
       # returns Active and Idle connections from DB
       def backend_query
+        warn 'DEPRECATED. Please use connection_counts instead'
+
         sql = %Q(
           SELECT ( SELECT count(*) FROM pg_stat_activity WHERE
             #{
@@ -70,6 +82,21 @@ module PostgresMonitor
               end
             }
           ) AS backends_idle FROM pg_stat_activity;
+        )
+
+        execute_sql(sql)
+      end
+
+      # get database sizes
+      def get_database_sizes
+        sql = %q(
+          SELECT
+            t1.datname AS db_name,
+            pg_size_pretty(pg_database_size(t1.datname)) as db_size
+          FROM
+            pg_database t1
+          ORDER BY
+            pg_database_size(t1.datname) desc;
         )
 
         execute_sql(sql)
@@ -242,7 +269,7 @@ module PostgresMonitor
             AND c.relkind='i';
        )
 
-       self.execute(sql)
+       execute_sql(sql)
      end
 
      # show the size of indexes, descending by size
@@ -429,7 +456,7 @@ module PostgresMonitor
                 "AND current_query <> '<IDLE>'"
               end
             }
-            AND now() - pg_stat_activity.query_start > interval '5 minutes'
+            AND now() - pg_stat_activity.query_start > interval #{@long_query_threshold}
           ORDER BY
             now() - pg_stat_activity.query_start DESC;
         )
@@ -504,6 +531,10 @@ module PostgresMonitor
 
       def pid_column
         nine_two? ? 'pid' : 'procpid'
+      end
+
+      def state_column
+        nine_two? ? 'state' : 'current_query'
       end
 
       def extension_loaded?(extname)
