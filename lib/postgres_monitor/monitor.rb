@@ -456,7 +456,7 @@ module PostgresMonitor
                 "AND current_query <> '<IDLE>'"
               end
             }
-            AND now() - pg_stat_activity.query_start > interval #{@long_query_threshold}
+            AND now() - pg_stat_activity.query_start > interval '#{@long_query_threshold}'
           ORDER BY
             now() - pg_stat_activity.query_start DESC;
         )
