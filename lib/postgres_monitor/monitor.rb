@@ -224,7 +224,10 @@ module PostgresMonitor
                  + (autovacuum_vacuum_scale_factor::numeric * pg_class.reltuples), '9G999G999G999') AS autovacuum_threshold,
             CASE
               WHEN autovacuum_vacuum_threshold + (autovacuum_vacuum_scale_factor::numeric * pg_class.reltuples) < psut.n_dead_tup
-              THEN 'yes'
+                THEN
+                  'yes'
+              ELSE
+                'no'
             END AS expect_autovacuum
           FROM
             pg_stat_user_tables psut INNER JOIN pg_class ON psut.relid = pg_class.oid
@@ -241,15 +244,17 @@ module PostgresMonitor
        sql = %q(
           SELECT
             relname,
-             CASE idx_scan
-               WHEN 0 THEN 'Insufficient data'
-               ELSE (100 * idx_scan / (seq_scan + idx_scan))::text
-             END percent_of_times_index_used,
-             n_live_tup rows_in_table
-           FROM
-             pg_stat_user_tables
-           ORDER BY
-             n_live_tup DESC;
+            CASE
+              WHEN idx_scan > 0
+                THEN (100 * idx_scan / (seq_scan + idx_scan))::text
+              ELSE
+                'Insufficient data'
+              END AS percent_of_times_index_used,
+              n_live_tup rows_in_table
+          FROM
+            pg_stat_user_tables
+          ORDER BY
+            n_live_tup DESC;
         )
 
        execute_sql(sql)
@@ -417,12 +422,12 @@ module PostgresMonitor
         pid_column = self.pid_column
         sql = %Q(
          SELECT
-            pg_stat_activity.#{pid_column},
+            pg_stat_activity.#{pid_column} AS pid,
             pg_class.relname,
             pg_locks.transactionid,
             pg_locks.granted,
-            pg_stat_activity.#{query_column},
-            age(now(),pg_stat_activity.query_start) AS "age"
+            pg_stat_activity.#{query_column} AS query,
+            age(now(),pg_stat_activity.query_start) AS age
          FROM
             pg_stat_activity,pg_locks left
             OUTER JOIN pg_class ON (pg_locks.relation = pg_class.oid)
@@ -442,7 +447,7 @@ module PostgresMonitor
         pid_column = self.pid_column
         sql = %Q(
           SELECT
-            #{pid_column},
+            #{pid_column} AS process,
             now() - pg_stat_activity.query_start AS duration,
             #{query_column} AS query
           FROM
