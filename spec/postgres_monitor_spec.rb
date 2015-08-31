@@ -276,5 +276,11 @@ describe PostgresMonitor do
       row = results.first
       expect(row.keys).to eq fields
     end
+
+    it 'should show the active extensions in the Database' do
+      results = @monitor.installed_extensions
+      row = results.first
+      expect(row['name']).to eq 'pg_stat_statements'
+    end
   end
 end

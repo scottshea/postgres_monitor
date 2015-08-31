@@ -57,6 +57,11 @@ module PostgresMonitor
         execute_sql "SELECT #{state_column}, COUNT(*) FROM pg_stat_activity GROUP BY #{state_column};"
       end
 
+      # list of installed extensions
+      def installed_extensions
+        execute_sql 'SELECT * FROM pg_available_extensions WHERE installed_version IS NOT NULL;'
+      end
+
       ### DEPRECATION WARNING
       # This seems to have an issue with returning multiple duplicate results;
       # Deprecating in favor of connection_counts
